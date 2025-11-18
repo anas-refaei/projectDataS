@@ -123,7 +123,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="trial.cpp" />
+    <ClCompile Include="Cook.cpp" />
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Order.cpp" />
+    <ClCompile Include="Restaurant.cpp" />
+    <ClCompile Include="Statistics.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Cook.h" />
+    <ClInclude Include="Definitions.h" />
+    <ClInclude Include="Event.h" />
+    <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="Order.h" />
+    <ClInclude Include="PriorityQueue.h" />
+    <ClInclude Include="Queue.h" />
+    <ClInclude Include="Restaurant.h" />
+    <ClInclude Include="Statistics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
