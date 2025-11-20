@@ -79,16 +79,33 @@ public:
 
 	//[1]InsertEnd 
 	//inserts a new node at end if the list
+	//void InsertEnd(const T& data)
+	//{
+	//	Node<T>* R = new Node<T>(data);
+	//	Node<T>* p = Head;
+	//	while (p->getNext())
+	//	{
+	//		p = p->getNext();
+	//	}
+	//	p->setNext(R);
+	//	R->setNext(nullptr);
+	//}
 	void InsertEnd(const T& data)
 	{
 		Node<T>* R = new Node<T>(data);
+
+		if (Head == nullptr) { 
+			Head = R;
+			return;
+		}
+
 		Node<T>* p = Head;
 		while (p->getNext())
 		{
 			p = p->getNext();
 		}
 		p->setNext(R);
-		R->setNext() = nullptr;
+		R->setNext(nullptr);  
 	}
 
 	//[2]Find 
