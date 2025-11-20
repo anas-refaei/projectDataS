@@ -135,9 +135,11 @@
     <ClInclude Include="Definitions.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="Order.h" />
     <ClInclude Include="PriorityQueue.h" />
     <ClInclude Include="Queue.h" />
+    <ClInclude Include="QueueADT.h" />
     <ClInclude Include="Restaurant.h" />
     <ClInclude Include="Statistics.h" />
   </ItemGroup>
