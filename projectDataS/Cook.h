@@ -1,63 +1,84 @@
-// Cook.h
+
 #ifndef COOK_H
 #define COOK_H
+#pragma once
+#include <iostream>
+using namespace std;
 
 class Order;  // Forward declaration
 
-class Cook {
-private:
-    int     id;                     // Unique ID
-    char    type;                   // 'V' = VIP cook, 'G' = Vegan cook, 'N' = Normal cook
-    int     speed;                  // Dishes per time step (same for all cooks of same type)
-    int     breakAfter;             // Take break after serving this many consecutive orders
-    int     ordersServedStreak;     // Current streak of served orders without break
+class Cook
+{
+    char type;              // 'V' = VIP, 'G' = Vegan, 'N' = Normal
+    int speed;              // Dishes per time step
+    int breakAfter;         // Break after serving this many consecutive orders
+    int ordersServedStreak; // Current streak without break
+    int breakEndTime;       // Time when current break ends (-1 if not on break)
 
-    // Current work
-    Order* currentOrder;           // nullptr if idle
-    int     remainingDishes;        // Of the current order
+    Order* currentOrder;    // nullptr if idle
+    int remainingDishes;    // Dishes left in current order
 
-    // Break state
-    bool    onBreak;
-    int     breakEndTime;           // Time when break ends (-1 if not on break)
+    // Statistics
+    int totalOrdersServed;
+    int totalDishesCooked;
+    int totalBusyTime;
+    int totalBreakTime;
 
-    // Statistics (Phase 2)
-    int     totalOrdersServed;
-    int     totalDishesCooked;
-    int     totalBusyTime;
-    int     totalBreakTime;
+    int id;                 // Unique ID (for printing and debugging)
 
 public:
     // Constructor
-    Cook(int cookId, char cookType, int cookSpeed, int breakAfterN);
+    Cook(char t, int s, int breakAfterN, int cookId)
+        : type(t), speed(s), breakAfter(breakAfterN), id(cookId),
+        ordersServedStreak(0), breakEndTime(-1), currentOrder(nullptr), remainingDishes(0),
+        totalOrdersServed(0), totalDishesCooked(0), totalBusyTime(0), totalBreakTime(0)
+    {
+    }
 
-    // Getters
-    int     getId() const;
-    char    getType() const;                   // Returns 'V', 'G', or 'N'
-    int     getSpeed() const;
-    bool    isAvailable(int currentTime) const;
-    bool    isBusy() const;
-    bool    isOnBreak() const;
-    Order* getCurrentOrder() const;
-    int     getRemainingDishes() const;
+    // ==================== Getters ====================
+    char    getType() const { return type; }
+    int     getSpeed() const { return speed; }
+    int     getBreakAfter() const { return breakAfter; }
+    int     getOrdersServedStreak() const { return ordersServedStreak; }
+    int     getBreakEndTime() const { return breakEndTime; }
+    int     getId() const { return id; }
 
-    // State changers
+    Order* getCurrentOrder() const { return currentOrder; }
+    int     getRemainingDishes() const { return remainingDishes; }
+
+    bool    isBusy() const { return currentOrder != nullptr; }
+    bool    isOnBreak() const { return breakEndTime != -1; }
+    bool    isAvailable(int currentTime) const {
+        return (currentOrder == nullptr) && (breakEndTime == -1 || currentTime >= breakEndTime);
+    }
+
+    // Phase 2 Statistics
+    int     getTotalOrdersServed() const { return totalOrdersServed; }
+    int     getTotalDishesCooked() const { return totalDishesCooked; }
+    int     getTotalBusyTime() const { return totalBusyTime; }
+    int     getTotalBreakTime() const { return totalBreakTime; }
+    double  getUtilization(int totalTime) const {
+        return totalTime > 0 ? (double)totalBusyTime / totalTime : 0.0;
+    }
+
+    // ==================== Setters & Actions ====================
     void    assignOrder(Order* order, int assignTime);
-    void    cookOneStep();                      // Reduces remainingDishes by speed
+    void    cookOneStep();
     void    finishOrder(int finishTime);
     void    startBreak(int currentTime);
-    void    endBreak(int currentTime);
-
-    // Called every time step
+    void    endBreak() { breakEndTime = -1; ordersServedStreak = 0; }
     void    update(int currentTime);
-
-    // Statistics
-    int     getTotalOrdersServed() const;
-    int     getTotalDishesCooked() const;
-    int     getTotalBusyTime() const;
-    int     getTotalBreakTime() const;
-    double  getUtilization(int totalTime) const;
-
-    void    reset();  // For multiple simulations if needed
+    void    incrementBusyTime() { totalBusyTime++; }
+    void    incrementBreakTime() { totalBreakTime++; }
+    void    incrementOrdersStreak() { ordersServedStreak++; }
+    void    resetStreak() { ordersServedStreak = 0; }
+    void    reset();  // Reset all stats
+    // For debugging / GUI
+    void    print() const {
+        cout << "Cook " << id << " (" << type << ") Speed:" << speed
+            << " Busy:" << (isBusy() ? "Yes" : "No")
+            << " OnBreak:" << (isOnBreak() ? "Yes" : "No")
+            << " OrdersServed:" << totalOrdersServed << endl;
+    }
 };
-
-#endif 
+#endif
