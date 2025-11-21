@@ -58,7 +58,7 @@ private:
 public:
 	void clear();
 	LinkedQueue<T>& operator=(const LinkedQueue<T>& rhs);
-	int size();
+	int size() const;
 	LinkedQueue();
 	bool isEmpty() const;
 	bool enqueue(const T& newEntry);
@@ -222,7 +222,7 @@ LinkedQueue<T>::LinkedQueue(const LinkedQueue<T>& LQ)
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 template <typename T>
-int LinkedQueue<T>::size()
+int LinkedQueue<T>::size() const
 {
 	int count = 0;
 	Node<T>* current = frontPtr;

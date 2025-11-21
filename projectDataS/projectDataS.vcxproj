@@ -143,6 +143,9 @@
     <ClInclude Include="Restaurant.h" />
     <ClInclude Include="Statistics.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="test1.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

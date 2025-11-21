@@ -16,7 +16,7 @@ private:
 		PriorityNode() {                       //CONSTRUCTOR of the struct
 			item = 0;
 			priority = 0.0;
-			next= nullptr
+			next = nullptr;
 
 		}
 		PriorityNode(T data, float p) {                  //CONSTRUCTOR
