@@ -11,7 +11,7 @@ private:
 		T item;
 		float priority;
 		PriorityNode* next;
-		PriorityNode() {                       //CONSTRUCTOR
+		PriorityNode() {                       //CONSTRUCTOR of the struct
 			item = 0;
 			priority = 0.0;
 			next= nullptr
@@ -26,7 +26,7 @@ private:
 	};
 	PriorityNode* head=nullptr;  
 	int count=0;
-public:                           //CONSTRUCTOR
+public:                           //CONSTRUCTOR of the class
 	PriorityQueue() {
 
 		head = nullptr;
