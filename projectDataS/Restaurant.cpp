@@ -4,23 +4,60 @@
 #include <iostream>
 using namespace std;
 
+
 Restaurant::Restaurant() : currentTime(0), eventCount(0) {
+    numNormalCooks = 0;
+    numVeganCooks = 0;
+    numVIPCooks = 0;
+    speedNormal = 0;
+    speedVegan = 0;
+    speedVIP = 0;
+    BO = 0;
+    BN = 0;
+    BG = 0;
+    BV = 0;
+    autoPromoteTime = 0;
+
+   
+    inServiceCount = 0;
+    finishedCount = 0;
 }
 
 Restaurant::~Restaurant() {
+
     Cook* cook;
-    while (availableNormalCooks.dequeue(cook)) delete cook;
-    while (availableVeganCooks.dequeue(cook)) delete cook;
-    while (availableVIPCooks.dequeue(cook)) delete cook;
+    while (availableNormalCooks.dequeue(cook)) {
+        delete cook;
+    }
+    while (availableVeganCooks.dequeue(cook)) {
+        delete cook;
+    }
+    while (availableVIPCooks.dequeue(cook)) {
+        delete cook;
+    }
 
     Order* order;
-    while (normalWaitingOrders.dequeue(order)) delete order;
-    while (veganWaitingOrders.dequeue(order)) delete order;
-    while (vipWaitingOrders.dequeue(order)) delete order;
+    while (normalWaitingOrders.dequeue(order)) {
+        delete order;
+    }
+    while (veganWaitingOrders.dequeue(order)) {
+        delete order;
+    }
+    while (vipWaitingOrders.dequeue(order)) {
+        delete order;
+    }
+
+    
+    inServiceOrders.DeleteAll();   
+    finishedOrders.DeleteAll();    
+   
 
     Event* event;
-    while (events.dequeue(event)) delete event;
+    while (events.dequeue(event)) {
+        delete event;
+    }
 }
+
 
 bool Restaurant::loadInputFile(const string& filename) {
     ifstream inputFile(filename);
@@ -144,10 +181,10 @@ void Restaurant::processPromotionEvent(Event* event) {
     cout << "  Note: Full promotion logic in Phase 2" << endl;
 }
 
+
 void Restaurant::displayCurrentState() const {
     cout << "\n--- Current State (Time=" << currentTime << ") ---" << endl;
 
-    // Calculate totals
     int totalWaiting = normalWaitingOrders.size() +
         veganWaitingOrders.size() +
         vipWaitingOrders.size();
@@ -162,6 +199,11 @@ void Restaurant::displayCurrentState() const {
     cout << "  VIP Queue:     " << vipWaitingOrders.size() << " order(s)" << endl;
     cout << "  Total Waiting: " << totalWaiting << " order(s)" << endl;
 
+
+    cout << "\nOrder Status:" << endl;
+    cout << "  In-Service:    " << inServiceCount << " order(s)" << endl;
+    cout << "  Finished:      " << finishedCount << " order(s)" << endl;
+
     cout << "\nAvailable Cooks:" << endl;
     cout << "  Normal Cooks:  " << availableNormalCooks.size() << "/" << numNormalCooks << endl;
     cout << "  Vegan Cooks:   " << availableVeganCooks.size() << "/" << numVeganCooks << endl;
@@ -174,12 +216,12 @@ void Restaurant::displayCurrentState() const {
 
 
 
+
 void Restaurant::runPhase1Simulation() {
     cout << "\n========================================" << endl;
     cout << "   PHASE 1 SIMULATION (Interactive)" << endl;
     cout << "========================================" << endl;
 
-    // Display loaded parameters
     cout << "\nLoaded Parameters:" << endl;
     cout << "Cooks: N=" << numNormalCooks << ", G=" << numVeganCooks
         << ", V=" << numVIPCooks << endl;
@@ -190,16 +232,15 @@ void Restaurant::runPhase1Simulation() {
     cout << "\nPress Enter to start simulation...";
     cin.get();
 
-    // Main simulation loop
+  
     while (!events.isEmpty()) {
         cout << "\n========================================" << endl;
         cout << "         Timestep " << currentTime << endl;
         cout << "========================================" << endl;
 
-        // Track if any events happened
+       
         bool hadEvents = false;
 
-        // Process all events at current timestep
         while (!events.isEmpty()) {
             Event* event;
             if (events.peek(event) && event->getTimestamp() == currentTime) {
@@ -224,29 +265,97 @@ void Restaurant::runPhase1Simulation() {
                 delete event;
             }
             else {
-                break;  // Future event, stop processing
+                break; 
             }
         }
 
-        // Show message if no events
         if (!hadEvents) {
             cout << "\n[No events at this timestep]" << endl;
         }
 
-        // Display current state
+        if (currentTime > 0) {  
+            assignOrdersPhase1();
+        }
+
+        completeOrdersPhase1();
+       
         displayCurrentState();
 
-        // Wait for user
         cout << "\nPress Enter to continue...";
         cin.get();
 
         currentTime++;
     }
 
-    // Simulation complete
     cout << "\n========================================" << endl;
     cout << "      SIMULATION COMPLETE" << endl;
     cout << "========================================" << endl;
     cout << "\nTotal timesteps simulated: " << currentTime << endl;
-    cout << "All events processed successfully!" << endl;
+}
+
+void Restaurant::assignOrdersPhase1() {
+    cout << "\n[Assignment Phase]" << endl;
+    bool anyAssigned = false;
+
+ 
+    Order* normalOrder;
+    if (normalWaitingOrders.dequeue(normalOrder)) {
+        normalOrder->setAssignTime(currentTime);
+        inServiceOrders.InsertEnd(normalOrder);
+        inServiceCount++; 
+        cout << "  -> Assigned Normal order " << normalOrder->getID()
+            << " to in-service" << endl;
+        anyAssigned = true;
+    }
+
+    Order* veganOrder;
+    if (veganWaitingOrders.dequeue(veganOrder)) {
+        veganOrder->setAssignTime(currentTime);
+        inServiceOrders.InsertEnd(veganOrder);
+        inServiceCount++; 
+        cout << "  -> Assigned Vegan order " << veganOrder->getID()
+            << " to in-service" << endl;
+        anyAssigned = true;
+    }
+
+    Order* vipOrder;
+    if (vipWaitingOrders.dequeue(vipOrder)) {
+        vipOrder->setAssignTime(currentTime);
+        inServiceOrders.InsertEnd(vipOrder);
+        inServiceCount++; 
+        cout << "  -> Assigned VIP order " << vipOrder->getID()
+            << " to in-service" << endl;
+        anyAssigned = true;
+    }
+
+    if (!anyAssigned) {
+        cout << "  -> No orders available to assign" << endl;
+    }
+}
+
+void Restaurant::completeOrdersPhase1() {
+    
+    if (currentTime % 5 != 0 || currentTime == 0) {
+        return;  
+    }
+
+    cout << "\n[Completion Phase - Timestep " << currentTime << "]" << endl;
+
+    if (inServiceCount == 0) {
+        cout << "  -> No orders in service to complete" << endl;
+        return;
+    }
+
+    int completedCount = 0;
+    int maxToComplete = (inServiceCount < 3) ? inServiceCount : 3;
+
+    for (int i = 0; i < maxToComplete; i++) {
+        
+        inServiceCount--;
+        finishedCount++;
+        completedCount++;
+    }
+
+    cout << "  -> Completed " << completedCount << " order(s)" << endl;
+    cout << "  -> Moved from in-service to finished" << endl;
 }

@@ -26,7 +26,12 @@ private:
     int BO, BN, BG, BV;
     int autoPromoteTime;
     int eventCount;
-    int currentTime;
+    int currentTime;  
+   int inServiceCount ;
+    int finishedCount ;
+    /////////////////////////////////////
+    LinkedList<Order*> inServiceOrders;    
+    LinkedList<Order*> finishedOrders;
 
 public:
     Restaurant();
@@ -38,7 +43,9 @@ public:
     void processArrivalEvent(Event* event);
     void processCancellationEvent(Event* event);
     void processPromotionEvent(Event* event);
-
+/// //////////////////////////////////////////////////
+    void assignOrdersPhase1();
+    void completeOrdersPhase1();
 private:
     void createCooks();
 };
