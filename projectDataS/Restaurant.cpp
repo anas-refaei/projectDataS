@@ -167,11 +167,31 @@ void Restaurant::processArrivalEvent(Event* event) {
 }
 
 
-
+//event is  Event object that contains the cancellation information from your input file ( Type of the event , timestamp , targetID)
 void Restaurant::processCancellationEvent(Event* event) {
-    cout << "  Target Order ID: " << event->getTargetID() << endl;
-    cout << "  Status: Order cancellation requested" << endl;
-    cout << "  Note: Full cancellation logic in Phase 2" << endl;
+    int targetID = event->getTargetID();                 //Extract the order ID to cancel from the event object
+    cout << "  Target Order ID: " << targetID << endl;   // Tell the user which order we're looking for
+    bool found = false;                                  // Create a marker that says 'I haven't found the order yet
+    LinkedQueue<Order*> tempQueue;                       // Create a temporary empty queue to hold orders we want to KEEP "Create a temporary holding area for orders we're keeping"
+    Order* order;                                        //Declare a pointer variable to hold each order as we check it
+    while (normalWaitingOrders.dequeue(order)) {         // Loop that removes orders one-by-one from the Normal waiting queue
+        if (order->getID() == targetID) {                //Check if this order is the one we want to cancel
+        
+            cout << "  Status: Order " << targetID << " cancelled successfully" << endl;
+            delete order;                               //Tell the user we found and cancelled their order
+            found = true;
+        }
+        else {
+           
+            tempQueue.enqueue(order);                   //If this is a different order (not the one to cancel)
+        }
+    }
+    while (tempQueue.dequeue(order)) {                  //Loop to take orders back OUT of temporary queue(Put the kept orders back into the original queue)
+        normalWaitingOrders.enqueue(order);             //Put each order back into the Normal waiting queue
+    }
+    if (!found) {                                       //heck if we DIDN'T find the order (found is still false)
+        cout << "  Status: Order " << targetID << " not found in waiting queue" << endl;
+    }
 }
 
 void Restaurant::processPromotionEvent(Event* event) {
