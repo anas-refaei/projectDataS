@@ -131,13 +131,14 @@ void Restaurant::createCooks() {
 }
 
 void Restaurant::processArrivalEvent(Event* event) {
-    OrderType type;
+    OrderType type;//OrderType type - Will store the enum value representing order classification
+    //Calls event->getOrderTypeChar() which returns 'N', 'G', or 'V' from the arrival event
     char orderChar = event->getOrderTypeChar();
 
     if (orderChar == 'N') type = TYPE_NRM;
     else if (orderChar == 'G') type = TYPE_VEG;
     else type = TYPE_VIP;
-
+	//Create Order Object using data from the event object
     Order* order = new Order(
         event->getOrderID(),
         event->getTimestamp(),
