@@ -1,17 +1,19 @@
 #include <iostream>
 using namespace std;
 #ifndef PRIORITY_QUEUE_
-#define PRIORITY_QUEUE_
-//?????? ??? ?? ?????   
+#define PRIORITY_QUEUE_ 
 // We can't use the Queue.h instead of this priorityQueue.h as there are diffrent structure Like (float priority.)
 
+//Why we did the priority queue ?
+//because your restaurant project needs orders to be processed by priority 
+//(VIP orders first, then by arrival time). 
 
 template <typename T>
 class PriorityQueue {
 private:
 	struct PriorityNode {
 		T item;
-		float priority;
+		float priority;                     // Priority value (higher = served first)
 		PriorityNode* next;
 		PriorityNode() {                       //CONSTRUCTOR of the struct
 			item = 0;
@@ -39,9 +41,11 @@ public:                           //CONSTRUCTOR of the class
 	}
 	PriorityQueue(const PriorityQueue<T>& other) : head(nullptr), count(0) {
 		PriorityNode* current = other.head;                              //Copy Constructor (Prevents shallow copy issues)
-		while (current != nullptr) {
-			enqueue(current->item, current->priority);
-			current = current->next;
+		while (current != nullptr) {                                     //int* p = new int(5);
+			enqueue(current->item, current->priority);                   //int* q = p; 
+			current = current->next;                                     //	p--->[5] < -- - q
+			                                                             // Shallow copy - both p and q point to the same memory
+	
 		}
 	}
 
@@ -92,8 +96,9 @@ bool dequeue(T& frontEntry) {
 	if (isEmpty()) {
 		return false;
 	}
-	PriorityNode* nodeToDelete = head;
-	frontEntry = head->item;
+	PriorityNode* nodeToDelete = head;  //PriorityNode* nodeToDelete = head;
+	frontEntry = head->item;    //A reference parameter that will be filled with the removed item's data
+	                            //frontEntry = head->item;
 	head = head->next;
 
 	delete nodeToDelete;

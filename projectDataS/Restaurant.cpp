@@ -1,6 +1,10 @@
 #include "Restaurant.h"
 #include <fstream>
 #include <sstream>
+//#include <fstream>
+//Needed for working with files
+//ifstream ? reading files
+//ofstream ? writing files
 #include <iostream>
 using namespace std;
 
@@ -17,8 +21,6 @@ Restaurant::Restaurant() : currentTime(0), eventCount(0) {
     BG = 0;
     BV = 0;
     autoPromoteTime = 0;
-
-   
     inServiceCount = 0;
     finishedCount = 0;
 }
@@ -46,50 +48,48 @@ Restaurant::~Restaurant() {
     while (vipWaitingOrders.dequeue(order)) {
         delete order;
     }
-
-    
     inServiceOrders.DeleteAll();   
     finishedOrders.DeleteAll();    
-   
-
     Event* event;
     while (events.dequeue(event)) {
         delete event;
     }
 }
 
-
 bool Restaurant::loadInputFile(const string& filename) {
-    ifstream inputFile(filename);
+    ifstream inputFile(filename);       //read files
     if (!inputFile.is_open()) {
         cerr << "Error: Cannot open file " << filename << endl;
         return false;
     }
-
+    //BO - Break Orders: Number of orders before a cook must take a break.
+    //BN - Break Normal : Break duration(timesteps) for Normal cooks.
+    //BG - Break Vegan : Break duration for Vegan cooks.
+    //BV - Break VIP : Break duration for VIP cooks.
     inputFile >> numNormalCooks >> numVeganCooks >> numVIPCooks;
     inputFile >> speedNormal >> speedVegan >> speedVIP;
     inputFile >> BO >> BN >> BG >> BV;
-    inputFile >> autoPromoteTime;
-    inputFile >> eventCount;
+    inputFile >> autoPromoteTime;    //Read Auto-Promotion Time
+    inputFile >> eventCount;        //Read Event Count , The next 8 lines contain events (Arrivals, Cancellations, Promotions)
 
     createCooks();
 
     string line;
     getline(inputFile, line);
 
-    for (int i = 0; i < eventCount; i++) {
-        getline(inputFile, line);
-        istringstream iss(line);
+    for (int i = 0; i < eventCount; i++) { //Loop through all events
+        getline(inputFile, line);          //getline(inputFile, line)
+		istringstream iss(line);           //Read from a string stream
 
         char eventType;
         iss >> eventType;
 
         if (eventType == 'R') {
-            char orderType;
+            char orderType;            //Declare Variables
             int ts, id, size;
             float money;
-            iss >> orderType >> ts >> id >> size >> money;
-            Event* event = new Event(ts, orderType, id, size, money);
+            iss >> orderType >> ts >> id >> size >> money;           //Extract Data from String Stream
+            Event* event = new Event(ts, orderType, id, size, money);  //Matches the 5-parameter Arrival constructor signature
             events.enqueue(event);
         }
         else if (eventType == 'X') {
@@ -114,7 +114,8 @@ bool Restaurant::loadInputFile(const string& filename) {
 
 void Restaurant::createCooks() {
     for (int i = 1; i <= numNormalCooks; i++) {
-        Cook* cook = new Cook('N', speedNormal, BN, i);
+        Cook* cook = new Cook('N', speedNormal, BN, i);//BN - Break duration for Normal cooks (timesteps)
+                                                       //i - Unique cook ID (1, 2, 3, ...)
         availableNormalCooks.enqueue(cook);
     }
 
@@ -200,6 +201,8 @@ void Restaurant::processPromotionEvent(Event* event) {
     cout << "  Status: Order promotion requested" << endl;
     cout << "  Note: Full promotion logic in Phase 2" << endl;
 }
+
+///////////////////////////////// SAYED NOMAN//////////////////////////////////////////
 
 
 void Restaurant::displayCurrentState() const {
@@ -312,6 +315,12 @@ void Restaurant::runPhase1Simulation() {
     cout << "========================================" << endl;
     cout << "\nTotal timesteps simulated: " << currentTime << endl;
 }
+
+
+
+//////////////////////////////////////// MOHAMED SALAH ///////////////////////////////////////////
+
+
 
 void Restaurant::assignOrdersPhase1() {
     cout << "\n[Assignment Phase]" << endl;
