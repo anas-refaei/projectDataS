@@ -1,15 +1,16 @@
 #include "Restaurant.h"
 #include <fstream>
 #include <sstream>
-//#include <fstream>
-//Needed for working with files
-//ifstream ? reading files
-//ofstream ? writing files
 #include <iostream>
+#include <algorithm>
+#include <vector>
+#include <iomanip>     // ? For setprecision(), fixed
+
 using namespace std;
 
-
-Restaurant::Restaurant() : currentTime(0), eventCount(0) {
+Restaurant::Restaurant() {
+    currentTime = 0;
+    eventCount = 0;
     numNormalCooks = 0;
     numVeganCooks = 0;
     numVIPCooks = 0;
@@ -21,75 +22,61 @@ Restaurant::Restaurant() : currentTime(0), eventCount(0) {
     BG = 0;
     BV = 0;
     autoPromoteTime = 0;
-    inServiceCount = 0;
-    finishedCount = 0;
+    totalNormalOrders = 0;
+    totalVeganOrders = 0;
+    totalVIPOrders = 0;
+    autoPromotedCount = 0;
 }
 
 Restaurant::~Restaurant() {
-
-    Cook* cook;
-    while (availableNormalCooks.dequeue(cook)) {
-        delete cook;
-    }
-    while (availableVeganCooks.dequeue(cook)) {
-        delete cook;
-    }
-    while (availableVIPCooks.dequeue(cook)) {
+    // Clean up all allocated cooks
+    for (Cook* cook : allCooks) {
         delete cook;
     }
 
+    // Clean up remaining orders
     Order* order;
-    while (normalWaitingOrders.dequeue(order)) {
-        delete order;
-    }
-    while (veganWaitingOrders.dequeue(order)) {
-        delete order;
-    }
-    while (vipWaitingOrders.dequeue(order)) {
-        delete order;
-    }
-    inServiceOrders.DeleteAll();   
-    finishedOrders.DeleteAll();    
+    while (normalWaitingOrders.dequeue(order)) delete order;
+    while (veganWaitingOrders.dequeue(order)) delete order;
+    while (vipWaitingOrders.dequeue(order)) delete order;
+
+    finishedOrders.DeleteAll();
+
     Event* event;
-    while (events.dequeue(event)) {
-        delete event;
-    }
+    while (events.dequeue(event)) delete event;
 }
 
 bool Restaurant::loadInputFile(const string& filename) {
-    ifstream inputFile(filename);       //read files
+    ifstream inputFile(filename);
+
     if (!inputFile.is_open()) {
         cerr << "Error: Cannot open file " << filename << endl;
         return false;
     }
-    //BO - Break Orders: Number of orders before a cook must take a break.
-    //BN - Break Normal : Break duration(timesteps) for Normal cooks.
-    //BG - Break Vegan : Break duration for Vegan cooks.
-    //BV - Break VIP : Break duration for VIP cooks.
+
     inputFile >> numNormalCooks >> numVeganCooks >> numVIPCooks;
     inputFile >> speedNormal >> speedVegan >> speedVIP;
     inputFile >> BO >> BN >> BG >> BV;
-    inputFile >> autoPromoteTime;    //Read Auto-Promotion Time
-    inputFile >> eventCount;        //Read Event Count , The next 8 lines contain events (Arrivals, Cancellations, Promotions)
+    inputFile >> autoPromoteTime;
+    inputFile >> eventCount;
 
     createCooks();
 
     string line;
-    getline(inputFile, line);
+    getline(inputFile, line); // Clear newline
 
-    for (int i = 0; i < eventCount; i++) { //Loop through all events
-        getline(inputFile, line);          //getline(inputFile, line)
-		istringstream iss(line);           //Read from a string stream
-
+    for (int i = 0; i < eventCount; i++) {
+        getline(inputFile, line);
+        istringstream iss(line);
         char eventType;
         iss >> eventType;
 
         if (eventType == 'R') {
-            char orderType;            //Declare Variables
+            char orderType;
             int ts, id, size;
             float money;
-            iss >> orderType >> ts >> id >> size >> money;           //Extract Data from String Stream
-            Event* event = new Event(ts, orderType, id, size, money);  //Matches the 5-parameter Arrival constructor signature
+            iss >> orderType >> ts >> id >> size >> money;
+            Event* event = new Event(ts, orderType, id, size, money);
             events.enqueue(event);
         }
         else if (eventType == 'X') {
@@ -108,37 +95,49 @@ bool Restaurant::loadInputFile(const string& filename) {
     }
 
     inputFile.close();
-    cout << "\nFile loaded successfully!" << endl;
+    cout << "File loaded successfully!" << endl;
     return true;
 }
 
 void Restaurant::createCooks() {
-    for (int i = 1; i <= numNormalCooks; i++) {
-        Cook* cook = new Cook('N', speedNormal, BN, i);//BN - Break duration for Normal cooks (timesteps)
-                                                       //i - Unique cook ID (1, 2, 3, ...)
-        availableNormalCooks.enqueue(cook);
+    int cookID = 1;
+
+    // Create Normal cooks
+    for (int i = 0; i < numNormalCooks; i++) {
+        Cook* cook = new Cook('N', speedNormal, BO, BN, cookID++);
+        allCooks.push_back(cook);
     }
 
-    for (int i = 1; i <= numVeganCooks; i++) {
-        Cook* cook = new Cook('G', speedVegan, BG, i);
-        availableVeganCooks.enqueue(cook);
+    // Create Vegan cooks
+    for (int i = 0; i < numVeganCooks; i++) {
+        Cook* cook = new Cook('G', speedVegan, BO, BG, cookID++);
+        allCooks.push_back(cook);
     }
 
-    for (int i = 1; i <= numVIPCooks; i++) {
-        Cook* cook = new Cook('V', speedVIP, BV, i);
-        availableVIPCooks.enqueue(cook);
+    // Create VIP cooks
+    for (int i = 0; i < numVIPCooks; i++) {
+        Cook* cook = new Cook('V', speedVIP, BO, BV, cookID++);
+        allCooks.push_back(cook);
     }
 }
 
 void Restaurant::processArrivalEvent(Event* event) {
-    OrderType type;//OrderType type - Will store the enum value representing order classification
-    //Calls event->getOrderTypeChar() which returns 'N', 'G', or 'V' from the arrival event
+    OrderType type;
     char orderChar = event->getOrderTypeChar();
 
-    if (orderChar == 'N') type = TYPE_NRM;
-    else if (orderChar == 'G') type = TYPE_VEG;
-    else type = TYPE_VIP;
-	//Create Order Object using data from the event object
+    if (orderChar == 'N') {
+        type = TYPE_NRM;
+        totalNormalOrders++;
+    }
+    else if (orderChar == 'G') {
+        type = TYPE_VEG;
+        totalVeganOrders++;
+    }
+    else {
+        type = TYPE_VIP;
+        totalVIPOrders++;
+    }
+
     Order* order = new Order(
         event->getOrderID(),
         event->getTimestamp(),
@@ -147,245 +146,723 @@ void Restaurant::processArrivalEvent(Event* event) {
         event->getOrderMoney()
     );
 
-    cout << "  Order ID: " << order->getID() << endl;
-    cout << "  Type: " << order->getTypeString() << endl;
-    cout << "  Size: " << order->getSize() << " dishes" << endl;
-    cout << "  Price: $" << order->getMoney() << endl;
+    cout << "EVENT: Order " << order->getID() << " (" << order->getTypeString()
+        << ") arrived" << endl;
 
     if (type == TYPE_NRM) {
         normalWaitingOrders.enqueue(order);
-        cout << "  Status: Added to Normal waiting queue" << endl;
     }
     else if (type == TYPE_VEG) {
         veganWaitingOrders.enqueue(order);
-        cout << "  Status: Added to Vegan waiting queue" << endl;
     }
     else {
         float priority = order->calculatePriority(currentTime);
         vipWaitingOrders.enqueue(order, priority);
-        cout << "  Priority: " << priority << endl;
-        cout << "  Status: Added to VIP waiting queue" << endl;
     }
 }
 
-
-//event is  Event object that contains the cancellation information from your input file ( Type of the event , timestamp , targetID)
 void Restaurant::processCancellationEvent(Event* event) {
-    int targetID = event->getTargetID();                 //Extract the order ID to cancel from the event object
-    cout << "  Target Order ID: " << targetID << endl;   // Tell the user which order we're looking for
-    bool found = false;                                  // Create a marker that says 'I haven't found the order yet
-    LinkedQueue<Order*> tempQueue;                       // Create a temporary empty queue to hold orders we want to KEEP "Create a temporary holding area for orders we're keeping"
-    Order* order;                                        //Declare a pointer variable to hold each order as we check it
-    while (normalWaitingOrders.dequeue(order)) {         // Loop that removes orders one-by-one from the Normal waiting queue
-        if (order->getID() == targetID) {                //Check if this order is the one we want to cancel
-        
-            cout << "  Status: Order " << targetID << " cancelled successfully" << endl;
-            delete order;                               //Tell the user we found and cancelled their order
+    int targetID = event->getTargetID();
+    cout << "EVENT: Cancellation request for Order " << targetID << endl;
+
+    LinkedQueue<Order*> tempQueue;
+    Order* order;
+    bool found = false;
+
+    while (normalWaitingOrders.dequeue(order)) {
+        if (order->getID() == targetID) {
+            cout << "  -> Order " << targetID << " cancelled successfully" << endl;
+            delete order;
             found = true;
         }
         else {
-           
-            tempQueue.enqueue(order);                   //If this is a different order (not the one to cancel)
+            tempQueue.enqueue(order);
         }
     }
-    while (tempQueue.dequeue(order)) {                  //Loop to take orders back OUT of temporary queue(Put the kept orders back into the original queue)
-        normalWaitingOrders.enqueue(order);             //Put each order back into the Normal waiting queue
+
+    while (tempQueue.dequeue(order)) {
+        normalWaitingOrders.enqueue(order);
     }
-    if (!found) {                                       //heck if we DIDN'T find the order (found is still false)
-        cout << "  Status: Order " << targetID << " not found in waiting queue" << endl;
+
+    if (!found) {
+        cout << "  -> Order " << targetID << " not found in waiting queue" << endl;
     }
 }
 
 void Restaurant::processPromotionEvent(Event* event) {
-    cout << "  Target Order ID: " << event->getTargetID() << endl;
-    cout << "  Extra Money: $" << event->getExtraMoney() << endl;
-    cout << "  Status: Order promotion requested" << endl;
-    cout << "  Note: Full promotion logic in Phase 2" << endl;
+    int targetID = event->getTargetID();
+    float extraMoney = event->getExtraMoney();
+
+    cout << "EVENT: Promotion request for Order " << targetID
+        << " (Extra: " << extraMoney << ")" << endl;
+
+    LinkedQueue<Order*> tempQueue;
+    Order* order;
+    bool found = false;
+
+    while (normalWaitingOrders.dequeue(order)) {
+        if (order->getID() == targetID) {
+            // Promote to VIP
+            order->setType(TYPE_VIP);
+            order->addMoney(extraMoney);
+
+            float priority = order->calculatePriority(currentTime);
+            vipWaitingOrders.enqueue(order, priority);
+
+            cout << "  -> Order " << targetID << " promoted to VIP" << endl;
+            totalNormalOrders--;
+            totalVIPOrders++;
+            found = true;
+        }
+        else {
+            tempQueue.enqueue(order);
+        }
+    }
+
+    while (tempQueue.dequeue(order)) {
+        normalWaitingOrders.enqueue(order);
+    }
+
+    if (!found) {
+        cout << "  -> Order " << targetID << " not found in Normal waiting queue" << endl;
+    }
 }
 
-///////////////////////////////// SAYED NOMAN//////////////////////////////////////////
+void Restaurant::checkAutoPromotions() {
+    if (autoPromoteTime <= 0) return;
 
+    LinkedQueue<Order*> tempQueue;
+    Order* order;
 
-void Restaurant::displayCurrentState() const {
-    cout << "\n--- Current State (Time=" << currentTime << ") ---" << endl;
+    while (normalWaitingOrders.dequeue(order)) {
+        int waitingTime = currentTime - order->getAT();
 
-    int totalWaiting = normalWaitingOrders.size() +
-        veganWaitingOrders.size() +
-        vipWaitingOrders.size();
+        if (waitingTime >= autoPromoteTime) {
+            // Auto-promote to VIP
+            order->setType(TYPE_VIP);
+            float priority = order->calculatePriority(currentTime);
+            vipWaitingOrders.enqueue(order, priority);
 
-    int totalCooks = availableNormalCooks.size() +
-        availableVeganCooks.size() +
-        availableVIPCooks.size();
+            cout << "  -> Order " << order->getID()
+                << " auto-promoted to VIP (waited " << waitingTime << " steps)" << endl;
 
-    cout << "\nWaiting Orders:" << endl;
-    cout << "  Normal Queue:  " << normalWaitingOrders.size() << " order(s)" << endl;
-    cout << "  Vegan Queue:   " << veganWaitingOrders.size() << " order(s)" << endl;
-    cout << "  VIP Queue:     " << vipWaitingOrders.size() << " order(s)" << endl;
-    cout << "  Total Waiting: " << totalWaiting << " order(s)" << endl;
+            autoPromotedCount++;
+            totalNormalOrders--;
+            totalVIPOrders++;
+        }
+        else {
+            tempQueue.enqueue(order);
+        }
+    }
 
+    while (tempQueue.dequeue(order)) {
+        normalWaitingOrders.enqueue(order);
+    }
+}
 
-    cout << "\nOrder Status:" << endl;
-    cout << "  In-Service:    " << inServiceCount << " order(s)" << endl;
-    cout << "  Finished:      " << finishedCount << " order(s)" << endl;
+void Restaurant::assignOrdersPhase2() {
+    cout << "\n--- Assignment Phase ---" << endl;
 
-    cout << "\nAvailable Cooks:" << endl;
-    cout << "  Normal Cooks:  " << availableNormalCooks.size() << "/" << numNormalCooks << endl;
-    cout << "  Vegan Cooks:   " << availableVeganCooks.size() << "/" << numVeganCooks << endl;
-    cout << "  VIP Cooks:     " << availableVIPCooks.size() << "/" << numVIPCooks << endl;
-    cout << "  Total Available: " << totalCooks << "/"
-        << (numNormalCooks + numVeganCooks + numVIPCooks) << endl;
+    // Priority 1: Assign VIP orders
+    if (assignVIPOrders()) {
+        cout << "  VIP orders assigned" << endl;
+    }
 
-    cout << "----------------------------------------" << endl;
+    // Priority 2: Assign Vegan orders
+    if (assignVeganOrders()) {
+        cout << "  Vegan orders assigned" << endl;
+    }
+
+    // Priority 3: Assign Normal orders
+    if (assignNormalOrders()) {
+        cout << "  Normal orders assigned" << endl;
+    }
+}
+
+bool Restaurant::assignVIPOrders() {
+    bool anyAssigned = false;
+
+    while (!vipWaitingOrders.isEmpty()) {
+        Order* vipOrder;
+        if (!vipWaitingOrders.peek(vipOrder)) break;
+
+        Cook* cook = nullptr;
+
+        // Try VIP cooks first
+        cook = getAvailableCook('V');
+
+        // Then Normal cooks
+        if (!cook) {
+            cook = getAvailableCook('N');
+        }
+
+        // Finally Vegan cooks
+        if (!cook) {
+            cook = getAvailableCook('G');
+        }
+
+        // ? IF NO COOK AVAILABLE, TRY PREEMPTION:
+        if (!cook) {
+            Order* toPreempt = findOrderToPreempt();
+
+            if (toPreempt != nullptr) {
+                // Find the cook working on this order
+                Cook* freedCook = nullptr;
+                for (Cook* c : allCooks) {
+                    if (c->getCurrentOrder() == toPreempt) {
+                        freedCook = c;
+                        break;
+                    }
+                }
+
+                if (freedCook != nullptr) {
+                    preemptOrder(toPreempt, freedCook);
+
+                    // Now assign VIP order to freed cook
+                    vipWaitingOrders.dequeue(vipOrder);
+                    freedCook->assignOrder(vipOrder, currentTime);
+
+                    cout << "  -> Cook " << freedCook->getType() << freedCook->getId()
+                        << " assigned to VIP Order " << vipOrder->getID()
+                        << " (after preemption)" << endl;
+
+                    anyAssigned = true;
+                    continue;
+                }
+            }
+
+            // No preemption possible, VIP waits
+            break;
+        }
+
+        if (cook) {
+            vipWaitingOrders.dequeue(vipOrder);
+            cook->assignOrder(vipOrder, currentTime);
+            anyAssigned = true;
+        }
+        else {
+            break;
+        }
+    }
+
+    return anyAssigned;
 }
 
 
+bool Restaurant::assignVeganOrders() {
+    bool anyAssigned = false;
+
+    while (!veganWaitingOrders.isEmpty()) {
+        Cook* cook = getAvailableCook('G');
+        if (!cook) break;
+
+        Order* veganOrder;
+        veganWaitingOrders.dequeue(veganOrder);
+        cook->assignOrder(veganOrder, currentTime);
+        anyAssigned = true;
+    }
+
+    return anyAssigned;
+}
+
+bool Restaurant::assignNormalOrders() {
+    bool anyAssigned = false;
+
+    while (!normalWaitingOrders.isEmpty()) {
+        Cook* cook = nullptr;
+
+        // Try Normal cooks first
+        cook = getAvailableCook('N');
+
+        // Then VIP cooks
+        if (!cook) {
+            cook = getAvailableCook('V');
+        }
+
+        if (!cook) break;
+
+        Order* normalOrder;
+        normalWaitingOrders.dequeue(normalOrder);
+        cook->assignOrder(normalOrder, currentTime);
+        anyAssigned = true;
+    }
+
+    return anyAssigned;
+}
+
+bool Restaurant::attemptPreemption(Order* vipOrder) {
+    Cook* victimCook = nullptr;
+    int minServiceTime = 999999;
+
+    // Search through all busy cooks for Normal orders
+    for (Cook* cook : allCooks) {
+        if (cook->getState() == BUSY) {
+            Order* currentOrder = cook->getCurrentOrder();
+            if (currentOrder && currentOrder->getType() == TYPE_NRM) {
+                int serviceTime = currentTime - currentOrder->getAssignTime();
+                if (serviceTime < minServiceTime) {
+                    minServiceTime = serviceTime;
+                    victimCook = cook;
+                }
+            }
+        }
+    }
+
+    // Perform preemption if victim found
+    if (victimCook) {
+        Order* preemptedOrder = victimCook->preemptCurrentOrder();
+        normalWaitingOrders.enqueue(preemptedOrder);
+
+        cout << "  -> PREEMPTION: Order " << preemptedOrder->getID()
+            << " preempted for VIP Order " << vipOrder->getID() << endl;
+
+        victimCook->assignOrder(vipOrder, currentTime);
+        return true;
+    }
+
+    return false;
+}
+
+void Restaurant::updateCooksAndOrders() {
+    cout << "\n--- Update Phase ---" << endl;
+
+    for (Cook* cook : allCooks) {
+        // Handle injured cooks
+        if (cook->isInjured()) {
+            cook->incrementInjuryTime();
+            continue;
+        }
+
+        // Handle cooks on break
+        if (cook->getState() == ON_BREAK) {
+            cook->updateBreak(currentTime);
+            cook->incrementBreakTime();
+        }
+        // Handle busy cooks
+        else if (cook->isBusy()) {
+            cook->cookOneStep();
+            cook->incrementBusyTime();
+
+            // ? ONLY finish if ALL dishes are done
+            if (cook->getRemainingDishes() == 0 && cook->getCurrentOrder() != nullptr) {
+                Order* finishedOrder = cook->getCurrentOrder();
+
+                // ? Finish the order (this clears cook's currentOrder)
+                cook->finishOrder(currentTime);
+
+                // Check if order is late
+                finishedOrder->checkLateness();
+                if (finishedOrder->getIsLate()) {
+                    cout << "  -> Order " << finishedOrder->getID()
+                        << " finished LATE (Deadline: "
+                        << finishedOrder->getDeadline() << ")" << endl;
+                }
+
+                // ? Add to finished orders (ONLY once, when truly finished)
+                finishedOrders.InsertEnd(finishedOrder);
+            }
+        }
+        // Handle available cooks (track idle time)
+        else if (cook->getState() == AVAILABLE) {
+            cook->incrementIdleTime();
+        }
+    }
+}
 
 
-void Restaurant::runPhase1Simulation() {
+void Restaurant::displayCurrentState() {
+    cout << "\n======================================" << endl;
+    cout << "Time Step: " << currentTime << endl;
+    cout << "======================================" << endl;
+
+    cout << "Waiting Orders:" << endl;
+    cout << "  Normal: " << normalWaitingOrders.size() << endl;
+    cout << "  Vegan: " << veganWaitingOrders.size() << endl;
+    cout << "  VIP: " << vipWaitingOrders.size() << endl;
+
+    cout << "Available Cooks:" << endl;
+    cout << "  Normal: " << countAvailableCooks('N') << "/" << numNormalCooks << endl;
+    cout << "  Vegan: " << countAvailableCooks('G') << "/" << numVeganCooks << endl;
+    cout << "  VIP: " << countAvailableCooks('V') << "/" << numVIPCooks << endl;
+
+    cout << "  Busy: " << countBusyCooks() << endl;
+    cout << "  On Break: " << countBreakCooks() << endl;
+
+    cout << "Finished Orders: " << finishedOrders.size() << endl;
+    cout << "======================================\n" << endl;
+}
+
+void Restaurant::runPhase2Simulation() {
     cout << "\n========================================" << endl;
-    cout << "   PHASE 1 SIMULATION (Interactive)" << endl;
-    cout << "========================================" << endl;
+    cout << "   PHASE 2 SIMULATION - INTERACTIVE    " << endl;
+    cout << "========================================\n" << endl;
 
-    cout << "\nLoaded Parameters:" << endl;
-    cout << "Cooks: N=" << numNormalCooks << ", G=" << numVeganCooks
-        << ", V=" << numVIPCooks << endl;
-    cout << "Speeds: N=" << speedNormal << ", G=" << speedVegan
-        << ", V=" << speedVIP << " dishes/timestep" << endl;
-    cout << "Auto-Promote Time: " << autoPromoteTime << " timesteps" << endl;
-
-    cout << "\nPress Enter to start simulation...";
+    cout << "Configuration:" << endl;
+    cout << "  Cooks: N=" << numNormalCooks << " G=" << numVeganCooks
+        << " V=" << numVIPCooks << endl;
+    cout << "  Speeds: N=" << speedNormal << " G=" << speedVegan
+        << " V=" << speedVIP << " dishes/timestep" << endl;
+    cout << "  Auto-Promote: " << autoPromoteTime << " timesteps" << endl;
+    cout << "\nPress Enter to start simulation..." << endl;
     cin.get();
 
-  
-    while (!events.isEmpty()) {
-        cout << "\n========================================" << endl;
-        cout << "         Timestep " << currentTime << endl;
-        cout << "========================================" << endl;
+    while (!events.isEmpty() || normalWaitingOrders.size() > 0 ||
+        veganWaitingOrders.size() > 0 || vipWaitingOrders.size() > 0 ||
+        countBusyCooks() > 0) {
 
-       
+        cout << "\n\n";
+        cout << "############################################" << endl;
+        cout << "          TIMESTEP " << currentTime << endl;
+        cout << "############################################" << endl;
+
+        // Process events at current time
         bool hadEvents = false;
-
         while (!events.isEmpty()) {
             Event* event;
             if (events.peek(event) && event->getTimestamp() == currentTime) {
                 events.dequeue(event);
                 hadEvents = true;
 
-                cout << "\n[EVENT] ";
-
                 if (event->getType() == EVENT_ARRIVAL) {
-                    cout << "Order Arrival" << endl;
                     processArrivalEvent(event);
                 }
                 else if (event->getType() == EVENT_CANCELLATION) {
-                    cout << "Order Cancellation" << endl;
                     processCancellationEvent(event);
                 }
                 else if (event->getType() == EVENT_PROMOTION) {
-                    cout << "Order Promotion" << endl;
                     processPromotionEvent(event);
                 }
 
                 delete event;
             }
             else {
-                break; 
+                break;
             }
         }
 
         if (!hadEvents) {
-            cout << "\n[No events at this timestep]" << endl;
+            cout << "No events at this timestep" << endl;
         }
 
-        if (currentTime > 0) {  
-            assignOrdersPhase1();
-        }
+        // ? 1. CHECK FOR HEALTH EMERGENCIES (at start of timestep)
+        checkHealthEmergencies();
 
-        completeOrdersPhase1();
-       
+        // ? 2. CHECK FOR OVERTIME (before assignments)
+        checkForOvertime();
+
+        // 3. Update all cooks and finish completed orders
+        updateCooksAndOrders();
+
+        // 4. Check for auto-promotions
+        checkAutoPromotions();
+
+        // 5. Assign waiting orders to available cooks
+        assignOrdersPhase2();
+
+        // ? 6. APPLY FATIGUE TO BUSY COOKS
+        applyFatigueToCooks();
+
+        // 7. Display current state
         displayCurrentState();
 
-        cout << "\nPress Enter to continue...";
+        cout << "Press Enter to continue..." << endl;
         cin.get();
 
         currentTime++;
     }
 
     cout << "\n========================================" << endl;
-    cout << "      SIMULATION COMPLETE" << endl;
+    cout << "      SIMULATION COMPLETE              " << endl;
     cout << "========================================" << endl;
-    cout << "\nTotal timesteps simulated: " << currentTime << endl;
+    cout << "Total timesteps: " << currentTime << endl;
+
+    // Generate output file
+    generateOutputFile("output.txt");
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ? STEP 3: FIND NORMAL ORDER TO PREEMPT
+Order* Restaurant::findOrderToPreempt() {
+    Order* bestToPreempt = nullptr;
+    int minServiceTime = 999999;
+
+    // Search through all busy cooks for Normal orders
+    for (Cook* cook : allCooks) {
+        if (cook->getState() == BUSY && cook->getCurrentOrder() != nullptr) {
+            Order* order = cook->getCurrentOrder();
+
+            // Only preempt Normal orders
+            if (order->getType() == TYPE_NRM) {
+                int serviceTime = currentTime - order->getAssignTime();
+
+                // Choose order with LEAST service time
+                if (serviceTime < minServiceTime) {
+                    minServiceTime = serviceTime;
+                    bestToPreempt = order;
+                }
+            }
+        }
+    }
+
+    return bestToPreempt;
+}
+
+// ? STEP 3: PREEMPT ORDER (This replaces your attemptPreemption)
+void Restaurant::preemptOrder(Order* order, Cook* cook) {
+    cout << "  -> PREEMPTION: Order " << order->getID()
+        << " interrupted, Cook " << cook->getId()
+        << " reassigned" << endl;
+
+    // Calculate how many dishes were completed
+    int timeWorked = currentTime - order->getAssignTime();
+    int dishesCompleted = timeWorked * cook->getSpeed();
+    int remaining = order->getSize() - dishesCompleted;
+
+    if (remaining < 0) remaining = 0;
+
+    // Update order with remaining dishes
+    order->setDishesCompleted(order->getDishesCompleted() + dishesCompleted);
+    order->setSize(remaining);
+
+    // ? CRITICAL: Manually clear the cook (DON'T call finishOrder!)
+    cook->setCurrentOrder(nullptr);
+    cook->setRemainingDishes(0);
+    cook->setStatus(AVAILABLE);
+
+    // Return to Normal waiting queue
+    normalWaitingOrders.enqueue(order);
+
+    cout << "     (Returned " << remaining << " dishes to queue)" << endl;
 }
 
 
+// ? STEP 4: CHECK FOR HEALTH EMERGENCIES
+void Restaurant::checkHealthEmergencies() {
+    // 1% chance per cook per timestep
+    for (Cook* cook : allCooks) {
+        if (!cook->isInjured() && cook->getState() != ON_BREAK) {
+            int randomChance = rand() % 100;
 
-//////////////////////////////////////// MOHAMED SALAH ///////////////////////////////////////////
+            if (randomChance < 1) {  // 1% chance
+                int recoveryTime = 3 + (rand() % 5);  // 3-7 timesteps
+                cook->causeInjury(currentTime, recoveryTime);
 
+                cout << "  -> HEALTH EMERGENCY: Cook " << cook->getType()
+                    << cook->getId() << " injured until time "
+                    << (currentTime + recoveryTime) << endl;
 
+                // If cook was working, return order to queue
+                if (cook->getCurrentOrder() != nullptr) {
+                    Order* order = cook->getCurrentOrder();
 
-void Restaurant::assignOrdersPhase1() {
-    cout << "\n[Assignment Phase]" << endl;
-    bool anyAssigned = false;
+                    cout << "     Order " << order->getID()
+                        << " returned to waiting queue" << endl;
 
- 
-    Order* normalOrder;
-    if (normalWaitingOrders.dequeue(normalOrder)) {
-        normalOrder->setAssignTime(currentTime);
-        inServiceOrders.InsertEnd(normalOrder);
-        inServiceCount++; 
-        cout << "  -> Assigned Normal order " << normalOrder->getID()
-            << " to in-service" << endl;
-        anyAssigned = true;
-    }
+                    if (order->getType() == TYPE_NRM)
+                        normalWaitingOrders.enqueue(order);
+                    else if (order->getType() == TYPE_VEG)
+                        veganWaitingOrders.enqueue(order);
+                    else {
+                        float priority = order->calculatePriority(currentTime);
+                        vipWaitingOrders.enqueue(order, priority);
+                    }
+                }
+            }
+        }
 
-    Order* veganOrder;
-    if (veganWaitingOrders.dequeue(veganOrder)) {
-        veganOrder->setAssignTime(currentTime);
-        inServiceOrders.InsertEnd(veganOrder);
-        inServiceCount++; 
-        cout << "  -> Assigned Vegan order " << veganOrder->getID()
-            << " to in-service" << endl;
-        anyAssigned = true;
-    }
-
-    Order* vipOrder;
-    if (vipWaitingOrders.dequeue(vipOrder)) {
-        vipOrder->setAssignTime(currentTime);
-        inServiceOrders.InsertEnd(vipOrder);
-        inServiceCount++; 
-        cout << "  -> Assigned VIP order " << vipOrder->getID()
-            << " to in-service" << endl;
-        anyAssigned = true;
-    }
-
-    if (!anyAssigned) {
-        cout << "  -> No orders available to assign" << endl;
+        // Update injury status each timestep
+        cook->updateInjuryStatus(currentTime);
     }
 }
 
-void Restaurant::completeOrdersPhase1() {
-    
-    if (currentTime % 5 != 0 || currentTime == 0) {
-        return;  
+// ? STEP 5: CHECK FOR OVERTIME
+void Restaurant::checkForOvertime() {
+    // If VIP queue has > 5 orders, force some cooks into overtime
+    if (vipWaitingOrders.size() > 5) {
+        cout << "  -> SYSTEM OVERLOAD: Forcing overtime (VIP queue: "
+            << vipWaitingOrders.size() << ")" << endl;
+
+        // Force 2 Normal cooks to skip their next break
+        int forced = 0;
+        for (Cook* cook : allCooks) {
+            if (cook->getType() == 'N' && !cook->shouldSkipBreak() && forced < 2) {
+                cook->forceOvertime();
+                forced++;
+                cout << "     Cook N" << cook->getId()
+                    << " will skip next break (speed reduced)" << endl;
+            }
+        }
     }
+}
 
-    cout << "\n[Completion Phase - Timestep " << currentTime << "]" << endl;
+// ? STEP 7: APPLY FATIGUE TO BUSY COOKS
+void Restaurant::applyFatigueToCooks() {
+    for (Cook* cook : allCooks) {
+        // Apply fatigue to busy cooks
+        if (cook->isBusy()) {
+            cook->applyFatigue();
+        }
+    }
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-    if (inServiceCount == 0) {
-        cout << "  -> No orders in service to complete" << endl;
+
+// ===============================================================================================
+// Helper Functions
+// ===============================================================================================
+
+Cook* Restaurant::getAvailableCook(char type) {
+    for (Cook* cook : allCooks) {
+        if (cook->getType() == type && cook->isAvailableForAssignment()) {
+            return cook;
+        }
+    }
+    return nullptr;
+}
+
+int Restaurant::countAvailableCooks(char type) {
+    int count = 0;
+    for (Cook* cook : allCooks) {
+        if (cook->getType() == type && cook->getState() == AVAILABLE) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int Restaurant::countBusyCooks() {
+    int count = 0;
+    for (Cook* cook : allCooks) {
+        if (cook->getState() == BUSY) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int Restaurant::countBreakCooks() {
+    int count = 0;
+    for (Cook* cook : allCooks) {
+        if (cook->getState() == ON_BREAK) {
+            count++;
+        }
+    }
+    return count;
+}
+////////////////////============================================================================================
+
+
+
+void Restaurant::generateOutputFile(const string& filename) {
+    ofstream outFile(filename);
+
+    if (!outFile.is_open()) {
+        cerr << "Error: Cannot create output file " << filename << endl;
         return;
     }
 
-    int completedCount = 0;
-    int maxToComplete = (inServiceCount < 3) ? inServiceCount : 3;
+    cout << "\nGenerating output file..." << endl;
 
-    for (int i = 0; i < maxToComplete; i++) {
-        
-        inServiceCount--;
-        finishedCount++;
-        completedCount++;
+    // ? EXTRACT ORDERS FROM LINKEDLIST TO VECTOR
+    vector<Order*> ordersVector;
+
+    // Method 1: Using getHead() to traverse the linked list
+    Node<Order*>* current = finishedOrders.getHead();
+    while (current != nullptr) {
+        ordersVector.push_back(current->getData());
+        current = current->getNext();
     }
 
-    cout << "  -> Completed " << completedCount << " order(s)" << endl;
-    cout << "  -> Moved from in-service to finished" << endl;
+    cout << "Extracted " << ordersVector.size() << " finished orders" << endl;
+
+    // Sort orders by FT (Finish Time), then by ST (Service Time)
+    sort(ordersVector.begin(), ordersVector.end(), [](Order* a, Order* b) {
+        if (a->getFinishTime() != b->getFinishTime()) {
+            return a->getFinishTime() < b->getFinishTime();
+        }
+        return a->getST() < b->getST();
+        });
+
+    // ? WRITE ORDER DETAILS (FT ID AT WT ST)
+    for (Order* order : ordersVector) {
+        outFile << order->getFinishTime() << " "
+            << order->getID() << " "
+            << order->getAT() << " "
+            << order->getWT() << " "
+            << order->getST() << endl;
+    }
+
+    // ? CALCULATE STATISTICS FROM ACTUAL FINISHED ORDERS
+    int totalOrders = ordersVector.size();  // Use actual finished orders count
+    int totalCooks = numNormalCooks + numVeganCooks + numVIPCooks;
+
+    // Calculate average waiting time and service time
+    double avgWT = 0.0, avgST = 0.0;
+    for (Order* order : ordersVector) {
+        avgWT += order->getWT();
+        avgST += order->getST();
+    }
+    if (totalOrders > 0) {
+        avgWT /= totalOrders;
+        avgST /= totalOrders;
+    }
+
+    // ? COUNT ORDERS BY ORIGINAL TYPE (prevents double-counting promoted orders)
+    int countNormal = 0, countVegan = 0, countVIP = 0;
+    for (Order* order : ordersVector) {
+        switch (order->getOriginalType()) {  // ? Use ORIGINAL type!
+        case TYPE_NRM: countNormal++; break;
+        case TYPE_VEG: countVegan++; break;
+        case TYPE_VIP: countVIP++; break;
+        }
+    }
+
+    // ? WRITE OVERALL STATISTICS
+    outFile << "\nOrders: " << totalOrders
+        << " [Norm:" << countNormal      // ? Use counted values!
+        << ", Veg:" << countVegan
+        << ", VIP:" << countVIP << "]" << endl;
+
+    outFile << "Cooks: " << totalCooks
+        << " [Norm:" << numNormalCooks
+        << ", Veg:" << numVeganCooks
+        << ", VIP:" << numVIPCooks << "]" << endl;
+
+    outFile << "Avg Wait: " << fixed << setprecision(2) << avgWT
+        << ", Avg Serv: " << avgST << endl;
+
+    outFile << "Auto-promoted: " << autoPromotedCount << endl;
+
+    // ??? ADD LATE ORDERS TRACKING ???
+    int lateOrdersCount = 0;
+    for (Order* order : ordersVector) {
+        if (order->getIsLate()) {
+            lateOrdersCount++;
+        }
+    }
+
+    double latePercentage = 0.0;
+    if (totalOrders > 0) {
+        latePercentage = (lateOrdersCount * 100.0) / totalOrders;
+    }
+
+    outFile << "Late Orders: " << lateOrdersCount
+        << " (" << fixed << setprecision(1) << latePercentage << "%)" << endl;
+    // ??? END OF LATE ORDERS TRACKING ???
+
+    // ? WRITE PER-COOK STATISTICS
+    for (Cook* cook : allCooks) {
+        outFile << "\nCook " << cook->getType() << cook->getId()
+            << " [Orders: Norm:" << cook->getTotalOrdersServedByType(0)
+            << ", Veg:" << cook->getTotalOrdersServedByType(1)
+            << ", VIP:" << cook->getTotalOrdersServedByType(2)
+            << ", Busy:" << cook->getTotalBusyTime()
+            << ", Idle:" << cook->getTotalIdleTime()
+            << ", Break:" << cook->getTotalBreakTime()
+            << ", Util:" << fixed << setprecision(4) << cook->getUtilization(currentTime) << "%]" << endl;
+    }
+
+    outFile.close();
+    cout << "Output file '" << filename << "' created successfully!" << endl;
+    cout << "Total orders written: " << totalOrders << endl;
 }

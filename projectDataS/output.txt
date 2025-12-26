@@ -1,0 +1,32 @@
+15 101 1 6 8
+22 301 2 0 20
+36 305 14 1 21
+42 302 4 0 38
+48 303 6 0 42
+58 111 15 29 14
+63 114 19 35 9
+70 102 1 57 12
+74 112 16 50 8
+82 115 21 53 8
+85 107 8 53 24
+90 105 3 76 11
+92 108 9 73 10
+92 103 1 66 25
+99 106 5 85 9
+105 104 3 82 20
+136 202 7 114 15
+154 203 13 125 16
+
+Orders: 18 [Norm:12, Veg:2, VIP:4]
+Cooks: 4 [Norm:2, Veg:1, VIP:1]
+Avg Wait: 50.28, Avg Serv: 17.22
+Auto-promoted: 15
+Late Orders: 10 (55.6%)
+
+Cook N1 [Orders: Norm:0, Veg:0, VIP:2, Busy:84, Idle:75, Break:0, Util:52.8302%]
+
+Cook N2 [Orders: Norm:0, Veg:0, VIP:3, Busy:96, Idle:57, Break:0, Util:62.7451%]
+
+Cook G3 [Orders: Norm:0, Veg:2, VIP:5, Busy:148, Idle:6, Break:4, Util:96.1039%]
+
+Cook V4 [Orders: Norm:0, Veg:0, VIP:6, Busy:75, Idle:77, Break:6, Util:49.3421%]

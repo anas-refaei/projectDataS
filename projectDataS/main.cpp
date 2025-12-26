@@ -3,15 +3,17 @@
 using namespace std;
 
 int main() {
-    cout << "=====================================" << endl;
-    cout << " Restaurant Management System" << endl;
-    cout << " Phase 1 - Data Structures Demo" << endl;
-    cout << "=====================================" << endl;
+    cout << endl;
+    cout << "========================================" << endl;
+    cout << "   Restaurant Management System         " << endl;
+    cout << "   Phase 2 - Complete Simulation        " << endl;
+    cout << "========================================" << endl;
+    cout << endl;
 
     Restaurant restaurant;
 
     string filename;
-    cout << "\nEnter input file name: ";
+    cout << "Enter input file name: ";
     getline(cin, filename);
 
     if (!restaurant.loadInputFile(filename)) {
@@ -19,7 +21,8 @@ int main() {
         return 1;
     }
 
-    restaurant.runPhase1Simulation();
+    restaurant.runPhase2Simulation();
 
     return 0;
 }
+

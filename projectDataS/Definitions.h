@@ -24,11 +24,6 @@ enum EventType {
     EVENT_PROMOTION      
 };
 // Cook Status (for Phase 2)
-enum CookStatus {
-    AVAILABLE,   // Cook is free and ready to take orders
-    BUSY,        // Cook is currently preparing an order
-    ON_BREAK     // Cook is on break (after serving BO orders)
-};
 
 #endif
 
