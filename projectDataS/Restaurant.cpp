@@ -637,10 +637,9 @@ void Restaurant::runPhase2Simulation() {
 
         currentTime++;
     }
-    // ✅ COPILOT'S FIXED VERSION
     cout << "\n--- Final Sweep: Clearing remaining orders ---" << endl;
-    for (int sweep = 0; sweep < 500; sweep++) {  // ← Increased from 100
-        // Check if done
+    for (int sweep = 0; sweep < 500; sweep++) {  
+
         if (normalWaitingOrders.size() == 0 &&
             veganWaitingOrders.size() == 0 &&
             vipWaitingOrders.size() == 0 &&
@@ -649,12 +648,10 @@ void Restaurant::runPhase2Simulation() {
             countBusyCooks() == 0) {
             cout << "All queues cleared after " << sweep << " sweep iterations." << endl;
             break;
-        }
-
-        // ✅ CRITICAL FIX: Assign BEFORE update
-        assignOrdersPhase2();        // ← Step 1: Assign first!
-        updateCooksAndOrders();      // ← Step 2: Cook immediately
-        checkAutoPromotions();       // ← Step 3: Promote if needed
+        }   
+        assignOrdersPhase2();       
+        updateCooksAndOrders();     
+        checkAutoPromotions();       
 
         currentTime++;
     }
