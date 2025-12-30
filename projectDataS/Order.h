@@ -110,11 +110,20 @@ public:
     // Display
     void display() const;
 
+    // GUI Support
+    ORD_STATUS getStatus() const {
+        if (finishTime != -1) return DONE;
+        if (assignTime != -1) return SRV;
+        return WAIT;
+    }
+
     const char* getTypeString() const {
         switch (type) {
         case TYPE_NRM: return "Normal";
         case TYPE_VEG: return "Vegan";
         case TYPE_VIP: return "VIP";
+        case TYPE_QCK: return "Express";
+        case TYPE_CTR: return "Catering";
         default: return "Unknown";
         }
     }

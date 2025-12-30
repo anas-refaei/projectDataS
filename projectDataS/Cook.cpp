@@ -1,5 +1,6 @@
 #include "Cook.h"
 #include "Order.h"
+#include "Definitions.h"
 #include <iostream>
 #include <algorithm>
 using namespace std;
@@ -44,6 +45,8 @@ bool Cook::finishOrder(int finishTime) {
     if (orderType == TYPE_NRM) totalOrdersServedByType[0]++;
     else if (orderType == TYPE_VEG) totalOrdersServedByType[1]++;
     else if (orderType == TYPE_VIP) totalOrdersServedByType[2]++;
+    else if (orderType == TYPE_QCK) totalOrdersServedByType[3]++;  // Quick
+    else if (orderType == TYPE_CTR) totalOrdersServedByType[4]++;  // Catering
 
     totalOrdersServed++;
     ordersServedStreak++;
@@ -139,5 +142,62 @@ Order* Cook::preemptCurrentOrder() {
     return preemptedOrder;
 }
 
-// ? THAT'S IT - NO MORE FUNCTIONS NEEDED!
-// The other functions are already in Cook.h
+// ? SERVICE CRITERIA SUPPORT METHODS IMPLEMENTATION
+
+bool Cook::canServeOrderType(OrderType orderType) const {
+    // Service Criteria:
+    // 1. VIP Orders: Can be served by any cook type (V, N, G)
+    // 2. Vegan Orders: Can only be served by Vegan cooks (G)
+    // 3. Normal Orders: Can be served by Normal (N) or VIP (V) cooks, NOT Vegan (G)
+
+    switch (orderType) {
+    case TYPE_VIP:
+        // VIP orders can be served by any cook type
+        return true;
+
+    case TYPE_VEG:
+        // Vegan orders can only be served by Vegan cooks
+        return (type == 'G');
+
+    case TYPE_NRM:
+        // Normal orders can be served by Normal or VIP cooks, NOT Vegan
+        return (type == 'N' || type == 'V');
+
+    default:
+        return false;
+    }
+}
+
+int Cook::getServicePriorityForOrderType(OrderType orderType) const {
+    // Returns service priority (lower number = higher priority)
+    // Returns -1 if cook cannot serve this order type
+
+    if (!canServeOrderType(orderType)) {
+        return -1;
+    }
+
+    switch (orderType) {
+    case TYPE_VIP:
+        // VIP Orders: Priority order = VIP cooks (1) → Normal cooks (2) → Vegan cooks (3)
+        if (type == 'V') return 1;
+        if (type == 'N') return 2;
+        if (type == 'G') return 3;
+        break;
+
+    case TYPE_NRM:
+        // Normal Orders: Priority order = Normal cooks (1) → VIP cooks (2)
+        if (type == 'N') return 1;
+        if (type == 'V') return 2;
+        break;
+
+    case TYPE_VEG:
+        // Vegan Orders: Only Vegan cooks can serve (priority = 1)
+        if (type == 'G') return 1;
+        break;
+
+    default:
+        return -1;
+    }
+
+    return -1;
+}

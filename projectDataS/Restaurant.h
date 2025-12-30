@@ -9,6 +9,7 @@
 #include "Event.h"
 #include <string>
 #include <vector>
+#include "GUI/GUI.h"
 
 class Restaurant {
 private:
@@ -16,6 +17,8 @@ private:
     LinkedQueue<Order*> normalWaitingOrders;
     LinkedQueue<Order*> veganWaitingOrders;
     PriorityQueue<Order*> vipWaitingOrders;
+    LinkedQueue<Order*> quickWaitingOrders;    // Express/Quick orders - FIFO
+    LinkedQueue<Order*> cateringWaitingOrders; // Catering orders - FIFO
 
 
 
@@ -27,10 +30,21 @@ private:
 
     // Configuration
     int numNormalCooks, numVeganCooks, numVIPCooks;
+    int numQuickCooks, numCateringCooks;  // NEW: Quick and Catering cook counts
     int speedNormal, speedVegan, speedVIP;
+    int speedQuick, speedCatering;        // NEW: Quick and Catering base speeds
     int BO, BN, BG, BV;
+    int BQ, BC;                           // NEW: Break durations for Quick and Catering
     int autoPromoteTime;
     int eventCount;
+    
+    // Statistics for new order types
+    int totalQuickOrders;
+    int totalCateringOrders;
+
+    // GUI 
+    GUI* pGUI;
+    PROG_MODE mode;
 
     // Simulation state
     int currentTime;
@@ -57,7 +71,12 @@ public:
 
     bool loadInputFile(const string& filename);
     void runPhase2Simulation();
-    void displayCurrentState() ;
+    void runSimulationWithGUI();
+
+    void setGUI(GUI* pGUI);
+    void setMode(PROG_MODE mode);
+
+    void displayCurrentState();
 
     // Event processing
     void processArrivalEvent(Event* event);
@@ -73,13 +92,15 @@ public:
     bool assignVIPOrders();
     bool assignVeganOrders();
     bool assignNormalOrders();
+    bool assignQuickOrders();     // NEW: Assign Express orders
+    bool assignCateringOrders();  // NEW: Assign Catering orders
     bool attemptPreemption(Order* vipOrder);
 
 
     // Output
-    void generateOutputFile(const string& filename);
-/// <summary>
-/// //////////////////////////////////////////////////////
+    void generateOutputToConsole();
+    /// <summary>
+    /// //////////////////////////////////////////////////////
     Cook* getAvailableCook(char type);
     int countCooksByState(char type, CookState state);
     int countAvailableCooks(char type);
@@ -88,6 +109,7 @@ public:
 
 
 private:
+
     void createCooks();
     Cook* getAvailableCookForType(char type);
     void returnCookToPool(Cook* cook);

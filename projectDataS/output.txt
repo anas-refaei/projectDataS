@@ -1,32 +1,47 @@
-15 101 1 6 8
-22 301 2 0 20
-36 305 14 1 21
-42 302 4 0 38
-48 303 6 0 42
-58 111 15 29 14
-63 114 19 35 9
-70 102 1 57 12
-74 112 16 50 8
-82 115 21 53 8
-85 107 8 53 24
-90 105 3 76 11
-92 108 9 73 10
-92 103 1 66 25
-99 106 5 85 9
-105 104 3 82 20
-136 202 7 114 15
-154 203 13 125 16
-
-Orders: 18 [Norm:12, Veg:2, VIP:4]
-Cooks: 4 [Norm:2, Veg:1, VIP:1]
-Avg Wait: 50.28, Avg Serv: 17.22
-Auto-promoted: 15
-Late Orders: 10 (55.6%)
-
-Cook N1 [Orders: Norm:0, Veg:0, VIP:2, Busy:84, Idle:75, Break:0, Util:52.8302%]
-
-Cook N2 [Orders: Norm:0, Veg:0, VIP:3, Busy:96, Idle:57, Break:0, Util:62.7451%]
-
-Cook G3 [Orders: Norm:0, Veg:2, VIP:5, Busy:148, Idle:6, Break:4, Util:96.1039%]
-
-Cook V4 [Orders: Norm:0, Veg:0, VIP:6, Busy:75, Idle:77, Break:6, Util:49.3421%]
+FT   ID   AT   WT   ST
+    5     201       4       0       1
+    5     102       2       0       3
+    7     103       3       0       4
+    9     101       1       0       8
+   10     105       7       0       3
+   11     202       9       0       2
+   13     108      11       0       2
+   13     104       6       0       7
+   15     203      14       0       1
+   16     109      12       0       4
+   20     204      18       0       2
+   21     112      17       0       4
+   21     111      16       0       5
+   21     110      15       0       6
+   23     205      22       0       1
+   25     114      20       0       5
+   27     116      24       0       3
+   27     113      19       0       8
+   30     119      27       0       3
+   30     117      25       0       5
+   31     206      29       0       2
+   31     302      13       0      18
+   32     120      28       0       4
+   33     118      26       0       7
+   41     303      21       0      20
+   53     304      30       1      22
+Orders: 26 [Norm:5, Veg:6, VIP:6, Expr:6, Cater:3]
+Cooks: 16 [Norm:6, Veg:3, VIP:2, Quick:3, Cater:2]
+Avg Wait = 0.0, Avg Serv = 5.77
+Auto-promoted: 0
+Cook N1: Orders [Norm:1, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 8, Idle: 46, Break/Injury: 0, Utilization: 14.8%
+Cook N2: Orders [Norm:1, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 7, Idle: 42, Break/Injury: 5, Utilization: 13.0%
+Cook N3: Orders [Norm:1, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 13, Idle: 38, Break/Injury: 3, Utilization: 24.1%
+Cook N4: Orders [Norm:1, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 6, Idle: 48, Break/Injury: 0, Utilization: 11.1%
+Cook N5: Orders [Norm:0, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 2, Idle: 47, Break/Injury: 5, Utilization: 3.7%
+Cook N6: Orders [Norm:1, Veg:0, VIP:0, Qck:0, Ctr:0], Busy: 7, Idle: 41, Break/Injury: 6, Utilization: 13.0%
+Cook G7: Orders [Norm:0, Veg:2, VIP:0, Qck:0, Ctr:0], Busy: 7, Idle: 41, Break/Injury: 6, Utilization: 13.0%
+Cook G8: Orders [Norm:0, Veg:2, VIP:0, Qck:0, Ctr:0], Busy: 6, Idle: 48, Break/Injury: 0, Utilization: 11.1%
+Cook G9: Orders [Norm:0, Veg:2, VIP:0, Qck:0, Ctr:0], Busy: 5, Idle: 49, Break/Injury: 0, Utilization: 9.3%
+Cook V10: Orders [Norm:0, Veg:0, VIP:4, Qck:0, Ctr:0], Busy: 17, Idle: 34, Break/Injury: 3, Utilization: 31.5%
+Cook V11: Orders [Norm:0, Veg:0, VIP:2, Qck:0, Ctr:0], Busy: 10, Idle: 38, Break/Injury: 6, Utilization: 18.5%
+Cook Q12: Orders [Norm:0, Veg:0, VIP:0, Qck:2, Ctr:0], Busy: 3, Idle: 46, Break/Injury: 5, Utilization: 5.6%
+Cook Q13: Orders [Norm:0, Veg:0, VIP:0, Qck:2, Ctr:0], Busy: 2, Idle: 48, Break/Injury: 4, Utilization: 3.7%
+Cook Q14: Orders [Norm:0, Veg:0, VIP:0, Qck:2, Ctr:0], Busy: 4, Idle: 38, Break/Injury: 12, Utilization: 7.4%
+Cook C15: Orders [Norm:0, Veg:0, VIP:0, Qck:0, Ctr:1], Busy: 24, Idle: 23, Break/Injury: 7, Utilization: 44.4%
+Cook C16: Orders [Norm:0, Veg:0, VIP:0, Qck:0, Ctr:2], Busy: 40, Idle: 14, Break/Injury: 0, Utilization: 74.1%

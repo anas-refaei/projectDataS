@@ -1,28 +1,35 @@
 #include <iostream>
 #include "Restaurant.h"
+//#include "CMUgraphicsLib\CMUgraphics.h"
+#include "GUI/GUI.h"
 using namespace std;
 
 int main() {
-    cout << endl;
-    cout << "========================================" << endl;
-    cout << "   Restaurant Management System         " << endl;
-    cout << "   Phase 2 - Complete Simulation        " << endl;
-    cout << "========================================" << endl;
-    cout << endl;
+    // Create GUI and get mode selection
+    GUI* pGUI = new GUI;
+    PROG_MODE mode = pGUI->getGUIMode();
 
+    // Create restaurant and set GUI
     Restaurant restaurant;
+    restaurant.setGUI(pGUI);
+    restaurant.setMode(mode);
 
-    string filename;
-    cout << "Enter input file name: ";
-    getline(cin, filename);
+    // Get input filename
+    pGUI->PrintMessage("Enter input filename: ");
+    string filename = pGUI->GetString();
 
+    // Load input file
     if (!restaurant.loadInputFile(filename)) {
-        cout << "Failed to load file." << endl;
+        pGUI->PrintMessage("Failed to load file! Click to exit.");
+        pGUI->waitForClick();
+        delete pGUI;
         return 1;
     }
 
-    restaurant.runPhase2Simulation();
+    // Run simulation with selected GUI mode
+    restaurant.runSimulationWithGUI();
 
+    // Cleanup
+    delete pGUI;
     return 0;
 }
-
