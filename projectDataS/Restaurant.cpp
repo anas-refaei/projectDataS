@@ -53,7 +53,7 @@ Restaurant::~Restaurant() {
     while (events.dequeue(event)) delete event;
 }
 
-////Mohamed salah
+////Anas
 
 bool Restaurant::loadInputFile(const string& filename) {
     ifstream inputFile(filename);
