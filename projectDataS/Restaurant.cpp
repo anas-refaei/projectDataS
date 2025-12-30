@@ -53,6 +53,8 @@ Restaurant::~Restaurant() {
     while (events.dequeue(event)) delete event;
 }
 
+////Mohamed salah
+
 bool Restaurant::loadInputFile(const string& filename) {
     ifstream inputFile(filename);
 
@@ -122,6 +124,7 @@ bool Restaurant::loadInputFile(const string& filename) {
     return true;
 }
 
+//sayed noman
 void Restaurant::createCooks() {
     int cookID = 1;
     auto getVariableSpeed = [](int baseSpeed) {
@@ -181,6 +184,8 @@ void Restaurant::createCooks() {
     }
 }
 
+//ANAS 
+
 void Restaurant::processArrivalEvent(Event* event) {
     OrderType type;
     char orderChar = event->getOrderTypeChar();
@@ -238,6 +243,7 @@ void Restaurant::processArrivalEvent(Event* event) {
         cateringWaitingOrders.enqueue(order);
     }
 }
+//ANAS
 
 void Restaurant::processCancellationEvent(Event* event) {
     int targetID = event->getTargetID();
@@ -266,6 +272,7 @@ void Restaurant::processCancellationEvent(Event* event) {
         cout << "  -> Order " << targetID << " not found in waiting queue" << endl;
     }
 }
+//ANAS
 
 void Restaurant::processPromotionEvent(Event* event) {
     int targetID = event->getTargetID();
@@ -304,7 +311,7 @@ void Restaurant::processPromotionEvent(Event* event) {
         cout << "  -> Order " << targetID << " not found in Normal waiting queue" << endl;
     }
 }
-
+//ANAS
 void Restaurant::checkAutoPromotions() {
     if (autoPromoteTime <= 0) return;
 
@@ -336,6 +343,7 @@ void Restaurant::checkAutoPromotions() {
     }
 }
 
+//sayed noman
 void Restaurant::assignOrdersPhase2() {
     cout << "\n--- Assignment Phase ---" << endl;
     if (assignVIPOrders()) {
@@ -354,7 +362,7 @@ void Restaurant::assignOrdersPhase2() {
         cout << "  Catering orders assigned" << endl;
     }
 }
-
+//sayed noman
 bool Restaurant::assignVIPOrders() {
     bool anyAssigned = false;
 
@@ -410,7 +418,7 @@ bool Restaurant::assignVIPOrders() {
     return anyAssigned;
 }
 
-
+//sayed noman
 bool Restaurant::assignVeganOrders() {
     bool anyAssigned = false;
 
@@ -426,7 +434,7 @@ bool Restaurant::assignVeganOrders() {
 
     return anyAssigned;
 }
-
+//sayed noman
 bool Restaurant::assignNormalOrders() {
     bool anyAssigned = false;
 
@@ -444,6 +452,7 @@ bool Restaurant::assignNormalOrders() {
     }
     return anyAssigned;
 }
+//sayed noman
 bool Restaurant::assignQuickOrders() {
     bool anyAssigned = false;
 
@@ -466,6 +475,7 @@ bool Restaurant::assignQuickOrders() {
 
     return anyAssigned;
 }
+//sayed noman
 bool Restaurant::assignCateringOrders() {
     bool anyAssigned = false;
 
@@ -513,7 +523,7 @@ bool Restaurant::attemptPreemption(Order* vipOrder) {
 
     return false;
 }
-
+//sayed noman
 void Restaurant::updateCooksAndOrders() {
     cout << "\n--- Update Phase ---" << endl;
 
@@ -548,7 +558,7 @@ void Restaurant::updateCooksAndOrders() {
     }
 }
 
-
+////Mohamed salah
 void Restaurant::displayCurrentState() {
     cout << "\n======================================" << endl;
     cout << "Time Step: " << currentTime << endl;
@@ -574,7 +584,7 @@ void Restaurant::displayCurrentState() {
     cout << "Finished Orders: " << finishedOrders.size() << endl;
     cout << "======================================\n" << endl;
 }
-
+////Mohamed salah and anas
 void Restaurant::runPhase2Simulation() {
     cout << "\n========================================" << endl;
     cout << "   PHASE 2 SIMULATION - INTERACTIVE    " << endl;
@@ -672,6 +682,7 @@ void Restaurant::runPhase2Simulation() {
 
 }
 
+///anas
 Order* Restaurant::findOrderToPreempt() {
     Order* bestToPreempt = nullptr;
     int minServiceTime = 999999;
@@ -690,6 +701,7 @@ Order* Restaurant::findOrderToPreempt() {
 
     return bestToPreempt;
 }
+//anas
 void Restaurant::preemptOrder(Order* order, Cook* cook) {
     cout << "  -> PREEMPTION: Order " << order->getID()
         << " interrupted, Cook " << cook->getId()
@@ -713,7 +725,7 @@ void Restaurant::preemptOrder(Order* order, Cook* cook) {
     cout << "     (Returned " << remaining << " dishes to queue)" << endl;
 }
 
-
+//sayed noman
 void Restaurant::checkHealthEmergencies() {
     for (Cook* cook : allCooks) {
         if (!cook->isInjured() && cook->getState() != ON_BREAK) {
@@ -746,6 +758,7 @@ void Restaurant::checkHealthEmergencies() {
         cook->updateInjuryStatus(currentTime);
     }
 }
+//sayed noman
 void Restaurant::checkForOvertime() {
     if (vipWaitingOrders.size() > 5) {
         cout << "  -> SYSTEM OVERLOAD: Forcing overtime (VIP queue: "
@@ -761,7 +774,7 @@ void Restaurant::checkForOvertime() {
         }
     }
 }
-
+//sayed noman
 void Restaurant::applyFatigueToCooks() {
     for (Cook* cook : allCooks) {
         if (cook->isBusy()) {
@@ -770,7 +783,7 @@ void Restaurant::applyFatigueToCooks() {
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
-
+//sayed noman
 Cook* Restaurant::getAvailableCook(char type) {
     Cook* selectedCook = nullptr;
     int minOrders = INT_MAX;
@@ -795,7 +808,7 @@ Cook* Restaurant::getAvailableCook(char type) {
 }
 
 
-
+////Mohamed salah
 int Restaurant::countAvailableCooks(char type) {
     int count = 0;
     for (Cook* cook : allCooks) {
@@ -805,7 +818,7 @@ int Restaurant::countAvailableCooks(char type) {
     }
     return count;
 }
-
+////Mohamed salah
 int Restaurant::countBusyCooks() {
     int count = 0;
     for (Cook* cook : allCooks) {
@@ -815,7 +828,7 @@ int Restaurant::countBusyCooks() {
     }
     return count;
 }
-
+////Mohamed salah
 int Restaurant::countBreakCooks() {
     int count = 0;
     for (Cook* cook : allCooks) {
@@ -825,6 +838,7 @@ int Restaurant::countBreakCooks() {
     }
     return count;
 }
+////Mohamed salah
 void Restaurant::generateOutputToConsole() {
 
     ofstream outFile("output.txt");
@@ -954,15 +968,15 @@ void Restaurant::generateOutputToConsole() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
+////Mohamed salah
 void Restaurant::setGUI(GUI* pGUI) {
     this->pGUI = pGUI;
 }
-
+////Mohamed salah
 void Restaurant::setMode(PROG_MODE mode) {
     this->mode = mode;
 }
-
+////Mohamed salah
 void Restaurant::runSimulationWithGUI() {
     pGUI->PrintMessage("Simulation Started... Click to continue");
     pGUI->waitForClick();
