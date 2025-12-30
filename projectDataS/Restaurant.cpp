@@ -584,7 +584,7 @@ void Restaurant::displayCurrentState() {
     cout << "Finished Orders: " << finishedOrders.size() << endl;
     cout << "======================================\n" << endl;
 }
-////Mohamed salah and anas
+////Mohamed salah 
 void Restaurant::runPhase2Simulation() {
     cout << "\n========================================" << endl;
     cout << "   PHASE 2 SIMULATION - INTERACTIVE    " << endl;
