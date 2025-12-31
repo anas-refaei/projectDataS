@@ -20,16 +20,10 @@ private:
     OrderType originalType;    // ? NEW: Original type at arrival (never changes)
     int size;                  // Number of dishes in the order
     float money;               // Total order price
-
-    // Tracking information (calculated during simulation)
     int assignTime;            // Time step when assigned to cook (-1 if not assigned)
-    int finishTime;            // FT - Time step when order completed (-1 if not finished)
-
-    // For preemption support (Phase 2)
+    int finishTime;            // FT - Time step when order completed (-1 if not finished
     int originalSize;          // Original size before any preemption
     int dishesCompleted;       // Number of dishes already prepared
-
-    // ? DEADLINE & LATENESS (REQUIRED)
     int deadline;              // Deadline time D = AT + f(SIZE, PRICE)
     bool late;                 // Is the order late? (FT > deadline)
     int WT;           // Waiting Time

@@ -188,13 +188,14 @@ void Restaurant::createCooks() {
 
 void Restaurant::processArrivalEvent(Event* event) {
     OrderType type;
+    //Gets the order type character from the event ('N', 'G', 'V', 'Q', or 'C').
     char orderChar = event->getOrderTypeChar();
-
+    //Map Character to OrderType Enum
     if (orderChar == 'N') {
         type = TYPE_NRM;
         totalNormalOrders++;
     }
-    else if (orderChar == 'G') {
+	else if (orderChar == 'G') {  // all the these variables are defined in restaurant.h
         type = TYPE_VEG;
         totalVeganOrders++;
     }
