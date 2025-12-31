@@ -1,4 +1,4 @@
-#include "Restaurant.h"
+﻿#include "Restaurant.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -528,35 +528,83 @@ void Restaurant::updateCooksAndOrders() {
     cout << "\n--- Update Phase ---" << endl;
 
     for (Cook* cook : allCooks) {
+        // Handle injured cooks
         if (cook->isInjured()) {
             cook->incrementInjuryTime();
             continue;
         }
+
+        // Handle cooks on break
         if (cook->getState() == ON_BREAK) {
             cook->updateBreak(currentTime);
             cook->incrementBreakTime();
         }
+        // Handle busy cooks
         else if (cook->isBusy()) {
-            cook->cookOneStep();
-            cook->incrementBusyTime();
+            Order* currentOrder = cook->getCurrentOrder();
 
-            if (cook->getRemainingDishes() == 0 && cook->getCurrentOrder() != nullptr) {
-                Order* finishedOrder = cook->getCurrentOrder();
-                cook->finishOrder(currentTime);
-                finishedOrder->checkLateness();
-                if (finishedOrder->getIsLate()) {
-                    cout << "  -> Order " << finishedOrder->getID()
-                        << " finished LATE (Deadline: "
-                        << finishedOrder->getDeadline() << ")" << endl;
+            if (currentOrder != nullptr) {
+                // Use Cook's method to get current speed (with fatigue)
+                int cookSpeed = cook->getCurrentSpeedInt();  // ← YOUR METHOD NAME
+
+                // Get remaining dishes from the COOK's tracking
+                int remainingDishes = cook->getRemainingDishes();  // ← From Cook, not Order!
+
+                // Cook multiple dishes per timestep based on speed
+                int dishesCookedThisStep = min(cookSpeed, remainingDishes);
+                remainingDishes -= dishesCookedThisStep;
+
+                // Update the cook's remaining dishes counter
+                cook->setRemainingDishes(remainingDishes);
+
+                // Update order's dishesCompleted counter
+                int currentCompleted = currentOrder->getDishesCompleted();
+                currentOrder->setDishesCompleted(currentCompleted + dishesCookedThisStep);
+
+                cook->incrementBusyTime();
+
+                cout << "  Cook " << cook->getId()  // ← lowercase 'd'
+                    << " cooked " << dishesCookedThisStep
+                    << " dishes (speed=" << cookSpeed
+                    << "), " << remainingDishes << " remaining" << endl;
+
+                // Check if order is finished
+                if (remainingDishes <= 0) {
+                    cook->setRemainingDishes(0);  // Ensure exactly 0
+
+                    // Finish the order
+                    cook->finishOrder(currentTime);
+
+                    // Check for lateness
+                    currentOrder->checkLateness();
+                    if (currentOrder->getIsLate()) {
+                        cout << "  -> Order " << currentOrder->getID()
+                            << " finished LATE at T=" << currentTime
+                            << " (Deadline: " << currentOrder->getDeadline() << ")" << endl;
+                    }
+                    else {
+                        cout << "  -> Order " << currentOrder->getID()
+                            << " finished ON TIME at T=" << currentTime << endl;
+                    }
+
+                    // Add to finished list
+                    finishedOrders.InsertEnd(currentOrder);
                 }
-                finishedOrders.InsertEnd(finishedOrder);
+            }
+            else {
+                // Edge case: Cook is busy but has no order
+                cout << "  WARNING: Cook " << cook->getId()
+                    << " is busy but has no order!" << endl;
+                cook->setState(AVAILABLE);
             }
         }
+        // Handle available cooks
         else if (cook->getState() == AVAILABLE) {
             cook->incrementIdleTime();
         }
     }
 }
+
 
 ////Mohamed salah
 void Restaurant::displayCurrentState() {
